@@ -40,6 +40,8 @@ export const SHARD_TYPES = Object.freeze({
     A_DOWN: {id: "key-a-down", check: (data) => { return typeof data == "boolean" } },
     S_DOWN: {id: "key-s-down", check: (data) => { return typeof data == "boolean" } },
     D_DOWN: {id: "key-d-down", check: (data) => { return typeof data == "boolean" } }, 
+
+    POS: { id: "pos", check: (data) => { return typeof data == "object" }}
 })
 
 export class PacketShard {
@@ -86,8 +88,6 @@ export class Client {
         socket.onclose = this.whenClose;
 
         this.socket = socket;
-
-
     }
 
     sendPacket(packet){
@@ -105,7 +105,6 @@ export class Client {
     whenMessage(message){
         let packet = JSON.parse(message.data);
 
-
         if (packet.type == "INIT_PACKET"){
             for (let shardIndex in packet.shards){
 
@@ -116,6 +115,8 @@ export class Client {
                 }
 
             }
+        } else if (packet.type == "GENERIC") {
+
         } 
     }
 

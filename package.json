@@ -4,5 +4,5 @@
     "js": "^0.1.0",
     "ws": "^8.18.0"
   },
-  "type":"module"
+  "type": "module"
 }
