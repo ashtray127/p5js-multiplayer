@@ -16,7 +16,7 @@ function displayCurrentData(){
         console.log(client_i + ": ")
         for (let data_point in client){
 
-            console.log("  - " + data_point + ": " + client[data_point])
+            console.log("  - " + data_point + ": " + JSON.stringify(client[data_point]))
 
         }
 
@@ -25,6 +25,7 @@ function displayCurrentData(){
 }
 
 function processKeys(){
+    let shards = []
     for (let id in client_data){
         let client = client_data[id];
 
@@ -41,12 +42,13 @@ function processKeys(){
             client.pos.x++;
         }
 
-        let data_shard = new PacketShard("POS", client.pos)
-
-        let pos_packet = new Packet("server", [data_shard])
-
-        return pos_packet;
+        shards.push(new PacketShard("POS", {client: id, pos: client.pos}))
     }
+
+
+    let pos_packet = new Packet("server", shards, "POS")
+
+    return pos_packet;
 }
 
 wss.on('connection', function(ws) {
@@ -100,7 +102,7 @@ wss.on('connection', function(ws) {
                 client_data[client_id][shard.type] = shard.data;
             }
 
-            let pos_packet = processKeys();
+            let pos_packet = JSON.stringify(processKeys());
 
             ws.send(pos_packet);
             

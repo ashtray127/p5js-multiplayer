@@ -30,7 +30,8 @@ const RETURN_CODES = Object.freeze({
 const PACKET_TYPES = [
     "GENERIC",
     "INIT_PACKET",
-    "KEY_PACKET"
+    "KEY_PACKET",
+    "POS"
 ]
 
 const SHARD_TYPES = Object.freeze({
@@ -40,6 +41,8 @@ const SHARD_TYPES = Object.freeze({
     A_DOWN: {id: "key-a-down", check: (data) => { return typeof data == "boolean" } },
     S_DOWN: {id: "key-s-down", check: (data) => { return typeof data == "boolean" } },
     D_DOWN: {id: "key-d-down", check: (data) => { return typeof data == "boolean" } }, 
+
+    POS: { id: "pos", check: (data) => { return typeof data == "object" }}
 })
 
 class PacketShard {
@@ -75,20 +78,11 @@ class Packet {
     }
 }
 
-class Client {
-    constructor(){
-        let socket = new WebSocket("ws://localhost:3000")
+const Client = function() {
 
-        socket.onopen = this.whenOpen;
+    let socket = new WebSocket("ws://localhost:3000")
 
-        socket.onmessage = this.whenMessage;
-
-        socket.onclose = this.whenClose;
-
-        this.socket = socket;
-    }
-
-    sendPacket(packet){
+    this.sendPacket = function(packet){
         if ( !(packet instanceof Packet)  ) return RETURN_CODES.MESSAGE_NOT_PACKET;
 
         this.socket.send(JSON.stringify(packet))
@@ -96,11 +90,11 @@ class Client {
         return RETURN_CODES.PACKET_SENT;
     }
 
-    whenOpen(){
+    this.whenOpen = function(){
         
     }
 
-    whenMessage(message){
+    this.whenMessage = function(message){
         let packet = JSON.parse(message.data);
 
         if (packet.type == "INIT_PACKET"){
@@ -113,10 +107,37 @@ class Client {
                 }
 
             }
+        } else if (packet.type == "POS") {
+            if ( !("clients_pos" in this) ){
+                this.clients_pos = {}
+            }
+
+            for (let shard_i in packet.shards) {
+
+                let shard = packet.shards[shard_i]
+
+                let id = shard.data.client;
+
+                let pos = shard.data.pos;
+
+                this.clients_pos[id] = pos
+
+
+            }
         } 
     }
 
-    whenClose(closeEvent){
+    this.whenClose = function(closeEvent){
         console.error("WebSocket closed with code " + closeEvent.code + ": " + closeEvent.reason)
     }
+
+    socket.onopen = this.whenOpen;
+
+    socket.addEventListener("message", this.whenMessage);
+
+    socket.onclose = this.whenClose;
+
+    this.socket = socket;
+
+    return this
 }
